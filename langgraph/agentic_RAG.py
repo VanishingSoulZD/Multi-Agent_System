@@ -1,11 +1,10 @@
 from langchain.chat_models import init_chat_model
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_fireworks import FireworksEmbeddings
+from langchain_milvus import Milvus
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import MessagesState, StateGraph, START, END
-
 from langgraph.prebuilt import ToolNode, tools_condition
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
@@ -26,10 +25,16 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000, chunk_overlap=200,
 )
 doc_splits = text_splitter.split_documents(docs)
-vectorstore = InMemoryVectorStore.from_documents(
-    documents=doc_splits,
-    embedding=FireworksEmbeddings(),
+# vectorstore = InMemoryVectorStore.from_documents(
+#     documents=doc_splits,
+#     embedding=FireworksEmbeddings(),
+# )
+URI = './agentic_RAG_Milvus.db'
+vectorstore = Milvus(
+    embedding_function=FireworksEmbeddings(),
+    connection_args={"uri": URI},
 )
+vectorstore.add_documents(doc_splits)
 retriever = vectorstore.as_retriever()
 retriever_tool = create_retriever_tool(
     retriever=retriever,
